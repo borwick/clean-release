@@ -1,0 +1,41 @@
+# Composed by roots from: python, the product.
+# Edit those fragments, not this file; `roots compose` regenerates it.
+
+[project]
+requires-python = ">=3.14"
+name = "clean-release"
+version = "0.2.0"
+description = "Carry a private repo to its public twin, one checked snapshot commit per version"
+authors = [
+    { name = "John Borwick", email = "john_borwick@pobox.com" }
+]
+dependencies = []
+
+[project.scripts]
+clean-release = "clean_release.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["pytest>=8.0", "pytest-xdist>=3.8", "ruff>=0.17"]
+
+[tool.uv]
+# Resolve only releases at least a week old. Days or weeks: uv takes
+# "1 month" with a warning and then applies no cutoff. A security release
+# is exempted per package with exclude-newer-package in the override.
+exclude-newer = "1 week"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+# ruff's default rule set, which ruff changes only in a minor release, plus
+# print() (T20) and naive datetimes (DTZ). No select; the version comes
+# from requires-python.
+extend-select = ["T20", "DTZ"]
+
+[tool.ruff.lint.per-file-ignores]
+# print() is the CLI's output and refusals.
+"src/clean_release/cli.py" = ["T201"]
