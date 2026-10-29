@@ -4,8 +4,11 @@
 [project]
 requires-python = ">=3.14"
 name = "clean-release"
-version = "0.2.0"
+version = "0.2.1"
 description = "Carry a private repo to its public twin, one checked snapshot commit per version"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [
     { name = "John Borwick", email = "john_borwick@pobox.com" }
 ]

@@ -1,9 +1,9 @@
 # PUBLIC-REPO
 
-The public repo is the private repo's twin, `~/code/<repo>-public`: one
-commit and one annotated tag per release, nothing else. Written only by
-`commit` (`src/clean_release/commit.py`); `diff` and `status` read it and
-never write.
+The public repo is the private repo's twin, by convention a sibling
+directory `<repo>-public`: one commit and one annotated tag per release,
+nothing else. Written only by `commit` (`src/clean_release/commit.py`);
+`diff` and `status` read it and never write.
 
 - **Where:** the machine config's `[repos.<name>] public`, else the
   policy's `[release] public`, `~` expanded (`public_path`); `doctor`

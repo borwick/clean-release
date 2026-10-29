@@ -8,7 +8,7 @@ exclude-newer-span = "P1W"
 
 [[package]]
 name = "clean-release"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 
 [package.dev-dependencies]
