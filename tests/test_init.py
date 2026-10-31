@@ -26,7 +26,7 @@ def test_lesson_6_init_carries_a_links_rewrite(fresh):
         {
             "path": "README.md",
             "pattern": LINKS,
-            "replace": "](https://github.com/OWNER/REPO/blob/main/\\1)",
+            "replace": "](https://github.com/OWNER/REPO/blob/main/\\g<target>)",
             "expect": 2,
         }
     ]

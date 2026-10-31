@@ -31,7 +31,10 @@ DOC_DOMAINS = ("example.com", "example.org", "example.net")
 DOC_TLDS = ("example", "test", "invalid", "localhost")
 PATTERNS = {
     "home-paths": re.compile(
-        r"/(?:Users|home)/(?!you\b)[A-Za-z0-9._-]+|[A-Za-z]:\\Users\\[A-Za-z0-9._-]+"
+        r"""(?x)
+        /(?:Users|home)/(?!you\b)[A-Za-z0-9._-]+  # a POSIX home, bar the docs' /home/you
+        | [A-Za-z]:\\Users\\[A-Za-z0-9._-]+       # a Windows home
+        """
     ),
     "emails": re.compile(
         r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}"

@@ -11,20 +11,27 @@ import glob
 import json
 import re
 from pathlib import Path
+from string import Template
 
 from clean_release import Refusal, git, policy
 
 README = "README.md"
-LINKS = r"\]\((?!https?://|#|mailto:)([^)]+)\)"
-LINKS_REPLACE = r"](https://github.com/OWNER/REPO/blob/main/\1)"
+LINKS = r"""(?x)
+\]\(                      # a link's target opens
+(?!https?://|\#|mailto:)  # unless it is a URL, an anchor or an address
+(?P<target>[^)]+)         # the path
+\)
+"""
+LINKS_REPLACE = r"](https://github.com/OWNER/REPO/blob/main/\g<target>)"
 DISCLOSURE = "docs/ai-disclosure.md"
 
-# Modeled on fileplan's own; OWNER, MODELS and the level are the owner's to set.
-# It cites no path and holds no address, so it passes `check` as written.
-DISCLOSURE_TEXT = """\
+# Modeled on fileplan's own; $repo is filled in, and OWNER, MODELS and the
+# level are the owner's to set. It cites no path and holds no address, so it
+# passes `check` as written.
+DISCLOSURE_TEXT = Template("""\
 # How this was written
 
-`REPO` was written with Claude Code.
+`$repo` was written with Claude Code.
 
 ## the level
 
@@ -47,10 +54,57 @@ record lives now.
 
 ## no endorsement
 
-Anthropic did not build `REPO`, does not sponsor it, and does not endorse
+Anthropic did not build `$repo`, does not sponsor it, and does not endorse
 it. Claude Code is Anthropic's tool, and it was used here the way any tool
 is used.
-"""
+""")
+
+# The starter policy. render fills the $-names; {version} is the policy's own
+# placeholder, filled at release.
+POLICY_TEXT = Template("""\
+# clean-release policy; docs/data-structures/POLICY.md in clean-release.
+# Every path starts excluded: move what ships to include.
+
+[release]
+tag = "v{version}"
+message = $message
+unclassified = "error"
+# The AI disclosure document: edit it, commit it, and include it in
+# [paths]; `check` fails a release without it.
+disclosure = $disclosure
+
+[paths]
+include = []
+exclude = [
+$excludes]
+
+[scan]
+# Generic patterns graded on every shipped file.
+patterns = ["home-paths", "emails"]
+# Globs of the binary files allowed to ship.
+binaries = []
+# Fail a shipped file that names a path that did not ship.
+citations = true
+# Globs of unshipped paths a shipped file may name, such as ["clean-release.toml"].
+citable = []
+# The secrets scanner on PATH: "betterleaks" or "gitleaks".
+secrets = "betterleaks"
+
+[verify]
+# Run in a copy of the export, such as ["uv run --locked pytest -q"].
+commands = []
+$rewrite""")
+
+REWRITE_TEXT = Template("""
+# Relative links 404 on PyPI: make them absolute.
+# Set OWNER/REPO to the public repo's URL.
+[[rewrite]]
+path = $path
+pattern = '''
+$pattern'''
+replace = '$replace'
+expect = $expect
+""")
 
 
 def toml_string(s: str) -> str:
@@ -85,56 +139,24 @@ def excludes(paths: list[str]) -> list[str]:
 
 def render(repo: str, paths: list[str], readme: str | None) -> str:
     """The starter policy's text."""
-    lines = [
-        "# clean-release policy; docs/data-structures/POLICY.md in clean-release.",
-        "# Every path starts excluded: move what ships to include.",
-        "",
-        "[release]",
-        'tag = "v{version}"',
-        f"message = {toml_string(repo + ' {version}')}",
-        'unclassified = "error"',
-        "# The AI disclosure document: edit it, commit it, and include it in",
-        "# [paths]; `check` fails a release without it.",
-        f"disclosure = {toml_string(DISCLOSURE)}",
-        "",
-        "[paths]",
-        "include = []",
-        "exclude = [",
-        *(f"    {toml_string(g)}," for g in excludes(paths)),
-        "]",
-        "",
-        "[scan]",
-        "# Generic patterns graded on every shipped file.",
-        'patterns = ["home-paths", "emails"]',
-        "# Globs of the binary files allowed to ship.",
-        "binaries = []",
-        "# Fail a shipped file that names a path that did not ship.",
-        "citations = true",
-        '# Globs of unshipped paths a shipped file may name, such as ["clean-release.toml"].',
-        "citable = []",
-        '# The secrets scanner on PATH: "betterleaks" or "gitleaks".',
-        'secrets = "betterleaks"',
-        "",
-        "[verify]",
-        '# Run in a copy of the export, such as ["uv run --locked pytest -q"].',
-        "commands = []",
-    ]
+    rewrite = ""
     if readme is not None:
         count = len(re.findall(LINKS, readme))
         if count:
-            lines += [
-                "",
-                "# Relative links 404 on PyPI: make them absolute.",
-                "# Set OWNER/REPO to the public repo's URL.",
-                "[[rewrite]]",
-                f"path = {toml_string(README)}",
-                f"pattern = '{LINKS}'",
-                f"replace = '{LINKS_REPLACE}'",
-                f"expect = {count}",
-            ]
+            rewrite = REWRITE_TEXT.substitute(
+                path=toml_string(README),
+                pattern=LINKS,
+                replace=LINKS_REPLACE,
+                expect=count,
+            )
         else:
-            lines += ["", f"# {README} has no relative links, so no rewrite is needed."]
-    return "\n".join(lines) + "\n"
+            rewrite = f"\n# {README} has no relative links, so no rewrite is needed.\n"
+    return POLICY_TEXT.substitute(
+        message=toml_string(repo + " {version}"),
+        disclosure=toml_string(DISCLOSURE),
+        excludes="".join(f"    {toml_string(g)},\n" for g in excludes(paths)),
+        rewrite=rewrite,
+    )
 
 
 def init(root: Path) -> tuple[Path, Path, bool]:
@@ -158,7 +180,7 @@ def init(root: Path) -> tuple[Path, Path, bool]:
     doc.parent.mkdir(parents=True, exist_ok=True)
     try:
         with doc.open("x", encoding="utf-8") as f:
-            f.write(DISCLOSURE_TEXT.replace("REPO", root.name))
+            f.write(DISCLOSURE_TEXT.substitute(repo=root.name))
     except FileExistsError:
         return file, doc, False
     return file, doc, True

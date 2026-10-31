@@ -215,8 +215,13 @@ def _citations(
         return []
     names = sorted(files, key=len, reverse=True)
     names += [d + "/" for d in sorted(dirs, key=len, reverse=True)]
+    alternatives = "|".join(map(re.escape, names))
     bare = re.compile(
-        r"(?<![\w./-])(" + "|".join(map(re.escape, names)) + r")(?![\w/-])"
+        rf"""(?x)
+        (?<![\w./-])  # not the tail of a longer path
+        ({alternatives})
+        (?![\w/-])    # nor its head; a dot after it ends a sentence
+        """
     )
     found = []
     for path, text in texts.items():

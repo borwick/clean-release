@@ -43,7 +43,7 @@ def test_local_is_never_shipped_at_the_root_only(tmp_path):
 
 
 def test_unknown_policy_key_refuses(tmp_path):
-    with pytest.raises(Refusal, match="unknown key.*inclde"):
+    with pytest.raises(Refusal, match=r"unknown key.*inclde"):
         load(tmp_path, '[paths]\ninclde = ["**"]\n')
 
 
@@ -89,7 +89,7 @@ def test_unknown_scan_key_refuses(tmp_path):
 
 
 def test_unknown_pattern_name_refuses(tmp_path):
-    with pytest.raises(Refusal, match="unknown name.*phones"):
+    with pytest.raises(Refusal, match=r"unknown name.*phones"):
         load(tmp_path, '[scan]\npatterns = ["emails", "phones"]\n')
 
 

@@ -14,7 +14,13 @@ from clean_release import Refusal, git, machine, policy
 from clean_release.git import Entry
 
 STAGING = Path("local/clean-release")
-MESSAGE = re.compile(r"^stage (\S+) ([0-9a-f]{40,64})$")
+MESSAGE = re.compile(
+    r"""(?x)
+    ^stage
+    \ (\S+)                # the version
+    \ ([0-9a-f]{40,64})$   # the tag's object, SHA-1 or SHA-256
+    """
+)
 
 
 def message(version: str, tag_sha: str) -> str:

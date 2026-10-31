@@ -1,3 +1,4 @@
+import re
 import subprocess
 
 import pytest
@@ -62,7 +63,7 @@ def test_a_dropped_file_goes(repo):
 
 
 def test_missing_tag_refuses(repo):
-    with pytest.raises(Refusal, match="no tag v9.9.9"):
+    with pytest.raises(Refusal, match=re.escape("no tag v9.9.9")):
         stage(repo, "9.9.9")
 
 

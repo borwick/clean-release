@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from clean_release import Refusal, machine
@@ -18,7 +20,7 @@ def test_fixture_config_loads(home):
 
 def test_missing_machine_config_refuses(home):
     (home / ".config/clean-release/config.toml").unlink()
-    with pytest.raises(Refusal, match="config.toml does not exist"):
+    with pytest.raises(Refusal, match=re.escape("config.toml does not exist")):
         machine.load("repo")
 
 
@@ -35,7 +37,7 @@ def test_explicit_empty_terms_loads(home):
 
 def test_listed_terms_file_missing_refuses(home):
     config(home, '[repos.repo]\nterms = ["~/nowhere.toml"]\n')
-    with pytest.raises(Refusal, match="nowhere.toml does not exist"):
+    with pytest.raises(Refusal, match=re.escape("nowhere.toml does not exist")):
         machine.load("repo")
 
 

@@ -1,3 +1,5 @@
+import shlex
+
 from clean_release import approve, commit, machine, policy
 from clean_release.cli import main
 from clean_release.stage import STAGING, stage
@@ -193,3 +195,20 @@ def test_the_machine_config_names_the_public_tree_before_the_policy(
     name_public(home, tmp_path / "mine")
     assert commit.public_path(machine.load("repo"), pol) == tmp_path / "mine"
     assert commit.public_path(None, None) is None
+
+
+def test_the_push_commands_survive_a_space_in_the_path(tmp_path):
+    public = tmp_path / "public repo"
+    public.mkdir()
+    git(public, "init", "-q")
+    add, push = commit._push(public, "main", "v1.0.1")
+    assert shlex.split(add)[:3] == ["git", "-C", str(public)]
+    assert shlex.split(push) == [
+        "git",
+        "-C",
+        str(public),
+        "push",
+        "origin",
+        "main",
+        "refs/tags/v1.0.1",
+    ]

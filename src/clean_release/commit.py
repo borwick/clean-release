@@ -7,6 +7,7 @@ re-created or made (`docs/data-structures/PUBLIC-REPO.md`).
 """
 
 import re
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -120,11 +121,14 @@ def _checkout(path: Path, commit: str) -> None:
 
 
 def _push(path: Path, branch: str, tag: str) -> list[str]:
-    """The owner's push commands; `remote add` first when there is no origin."""
+    """The owner's push commands, quoted for a shell; `remote add` first when
+    there is no origin."""
+    at = shlex.quote(str(path))
     lines = []
     if not git.ok(path, "remote", "get-url", "origin"):
-        lines.append(f"git -C {path} remote add origin <URL>")
-    lines.append(f"git -C {path} push origin {branch} refs/tags/{tag}")
+        lines.append(f"git -C {at} remote add origin <URL>")
+    ref = shlex.quote(f"refs/tags/{tag}")
+    lines.append(f"git -C {at} push origin {shlex.quote(branch)} {ref}")
     return lines
 
 
